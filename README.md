@@ -1,5 +1,5 @@
 # CICV
-A Common Interface for OpenCV. **Easy to use** is my purpose.
+A Common Interface for OpenCV. **EASY TO USE** is my purpose.
 
 # Install `CICV` Module
 ```bash
@@ -27,3 +27,6 @@ python3 sample.py -i /dev/video0
 python3 sample.py -i /dev/video0 -r 1920x1080
 
 ```
+
+# Module is EASY TO USE
+https://github.com/p513817/CICV/blob/e2c998a81c6ce435d49968d241fa5e2394120216/sample.py#L18-L44
