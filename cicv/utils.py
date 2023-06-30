@@ -128,7 +128,7 @@ def check_image_buffer(frame:np.ndarray) -> np.ndarray:
         raise ImageOpenError("Get empty image")
     return frame
 
-def put_highlighted_text(
+def draw_text(
         frame:np.ndarray, 
         message:str, 
         position:tuple=(40,40), 
