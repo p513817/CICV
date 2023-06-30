@@ -34,16 +34,13 @@ from .config import (
 class Wrapper(abc.ABC):
 
     @abc.abstractclassmethod
-    def _read_frame(self):
-        raise NotImplementedError
-
     def read(self) -> np.ndarray:
         """Read frame via opencv.
 
         Returns:
             np.ndarray: frame buffer
         """
-        raise self._read_frame()
+        pass
 
     @abc.abstractclassmethod
     def get_type(self) -> str:
@@ -62,6 +59,18 @@ class Wrapper(abc.ABC):
     def release(self):
         raise NotImplementedError
 
+    def _init_time_params(self):
+        self.timeout = 1/self.get_fps()
+        self.t_prev = time.time()
+        self.t_bias = 1e-5
+    
+    def _wait_time(self):
+        # NOTE: Sleep Directly for correct FPS 
+        t_process = ( self.timeout - (time.time() - self.t_prev ) )
+        if t_process > 0:
+            time.sleep( t_process )
+        self.t_prev = time.time()
+
 # --------------------------------------------------
 # Source Wrapper Object
 
@@ -76,22 +85,17 @@ class ImageWrapper(Wrapper):
         # Parameters
         self.path = path
         self.frame = check_image_buffer(cv2.imread(path))
+        
+        # Time Parameters
+        self._init_time_params()
 
-        # Wait Time
-        self.timeout = 1/self.get_fps()
-        self.t_prev = time.time()
-
-    def _read_frame(self):
-        # NOTE: Sleep Directly for correct FPS 
-        t_process = ( self.timeout - (time.time() - self.t_prev) )
-        if t_process > 0:
-            time.sleep( t_process )
+    def read(self):
 
         # Copy
         _frame = copy.deepcopy(self.frame)
 
-        # Update t_prev
-        self.t_prev = time.time()
+        # Wait for correct fps
+        self._wait_time()
 
         return _frame 
     
@@ -138,18 +142,26 @@ class DirImageWrapper(ImageWrapper):
         # Log
         logging.info('Found {} images in {}'.format(len(self.img_paths), self.path))
 
-    def _read_frame(self):
+        # Time Parameters
+        self._init_time_params()
+
+    def read(self):
 
         self.img_nums += 1
-        if self.img_nums < self.get_fps():
-            return self.img_buffers[self.img_id]
 
         self.img_id += 1
         if self.img_id > len(self.img_paths)-1:
             self.img_id = 0
 
         self.img_nums = 0
-        return self.img_buffers[self.img_id]
+
+        # Copy
+        _frame = copy.deepcopy(self.img_buffers[self.img_id])
+
+        # Wait for correct fps
+        self._wait_time()
+
+        return _frame
 
     def get_type(self):
         return DIR.__name__
@@ -171,10 +183,7 @@ class VideoWrapper(Wrapper):
         self.cap = cv2.VideoCapture()
         self.set_cap()
 
-        # Wait Time Helper
-        self.timebias = 1e-5
-        self.timeout = 1/self.get_fps() - self.timebias
-        self.t_prev = time.time()
+        self._init_time_params()
         
     def set_cap(self):
         status = self.cap.open(self.path)
@@ -185,13 +194,8 @@ class VideoWrapper(Wrapper):
         logging.debug('Reset Source')
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-    def _read_frame(self):
+    def read(self):
 
-        # NOTE: Sleep Directly for correct FPS 
-        t_process = ( self.timeout - (time.time() - self.t_prev) )
-        if t_process > 0:
-            time.sleep( t_process - self.timebias )
-        
         # Read Video Capture
         status, frame = self.cap.read()
 
@@ -201,8 +205,7 @@ class VideoWrapper(Wrapper):
             if not status:
                 raise VideoOpenError(f"VideoWrapper is broken, can't get the frame from {self.path}")
         
-        # Update t_prev
-        self.t_prev = time.time()
+        self._wait_time()
         
         return frame
     
@@ -262,7 +265,7 @@ class RtspWrapper(VideoWrapper):
         self.set_cap()
         time.sleep(1/30)
 
-    def _read_frame(self):
+    def read(self):
         status, frame = self.cap.read()
         
         if not status:
@@ -280,10 +283,9 @@ class UsbCameraWrapper(VideoWrapper):
         self.path = path
         
         self.cap = cv2.VideoCapture()
-        self.fps = 30 if fps is None else fps
+        self.fps = RTSP.fps if fps is None else fps
         self.resolution = resolution
         self.set_cap(self.resolution, self.fps)
-
 
     def set_cap(self, resolution, fps):
         """ Setup camera 
@@ -321,7 +323,7 @@ class UsbCameraWrapper(VideoWrapper):
         logging.debug('Reset Camera')
         time.sleep(1/30)
 
-    def _read_frame(self):
+    def read(self):
         status, frame = self.cap.read()
         
         if not status:
@@ -332,6 +334,9 @@ class UsbCameraWrapper(VideoWrapper):
                 raise UsbCamOpenError("Can not capture frame, please make sure the camera is available")
         
         return frame
+    
+    def get_fps(self):
+        return self.fps
 
 # --------------------------------------------------
 # Entrance
@@ -360,7 +365,8 @@ def get_source_object(input:str, camera_resolution:Tuple[int, int]=(1280, 720), 
     try:
         return UsbCameraWrapper(input, camera_resolution, fps)
     except (InvalidInput, OpenError) as e:
-        errors.append(e)
+        if len(errors)==0:
+            errors.append(e)
     
     # if not errors[OpenError]:
     #     logging.error(*errors[InvalidInput])#, file=sys.stderr, sep='\n')
