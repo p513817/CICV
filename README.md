@@ -7,7 +7,7 @@ pip3 install cicv
 ```
 
 # Module is EASY TO USE
-https://github.com/p513817/CICV/blob/e2c998a81c6ce435d49968d241fa5e2394120216/sample.py#L18-L44
+https://github.com/p513817/CICV/blob/53d4d7ddde33c12d32194bb75225c9957a4e9b2a/sample.py#L26-L42
 
 # Sample Usage
 ```bash
