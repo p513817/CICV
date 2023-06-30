@@ -1,42 +1,29 @@
 # CICV
-A Common Interface for OpenCV.
+A Common Interface for OpenCV. **Easy to use** is my purpose.
 
-# Support Input
-|   Type        |   Describe
-|   ---         |   ---
-|   Image       |   Image file path.
-|   Video       |   Video file path.
-|   Directory   |   The directory has several images.
-|   V4L2        |   Physical Camera.
-|   RTSP        |   RTSP Streaming url.
+# Install `CICV` Module
+```bash
+pip3 install cicv
+```
 
-# Install `CICV`
-* `PyPI`
-    ```bash
-    pip3 install cicv
-    ```
-* Build from source ( recommand to use virtualenv )
-    ```bash
-    # Install virtualenv and wrapper
-    $ sudo apt-get install python3-pip
-    $ sudo pip3 install virtualenv
-    $ sudo pip3 install virtualenvwrapper
+# Sample Usage
+```bash
+# Image
+python3 sample.py -i data/cat.jpg
 
-    # Add into environment
-    $ which virtualenvwrapper.sh
-    $ vim ~/.bashrc
+# Video
+python3 sample.py -i data/test.mp4
 
-    # HEAD of ~/.bashrc
-    export WORKON_HOME=~/.virtualenvs
-    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-    # END of ~/.bashrc
+# RTSP
+python3 sample.py -i rtsp://admin:admin@172.16.21.1:554/snl/live/1/1/n
 
-    $ source ~/.bashrc
+# Images in Folder 
+python3 sample.py -i data
 
-    # Activate Virtualenv
-    $ mkvirtualenv cicv
+# Camera
+python3 sample.py -i /dev/video0
 
-    # Install opencv
-    $ pip3 install opencv-python build
-    ```
+# Camera with custom resolution
+python3 sample.py -i /dev/video0 -r 1920x1080
 
+```

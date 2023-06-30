@@ -33,9 +33,9 @@ from .config import (
 # Basic Wrapper
 class Wrapper(abc.ABC):
 
-    # @abc.abstractclassmethod
-    # def _read_frame(self):
-    #     raise NotImplementedError
+    @abc.abstractclassmethod
+    def _read_frame(self):
+        raise NotImplementedError
 
     def read(self) -> np.ndarray:
         """Read frame via opencv.
@@ -81,7 +81,7 @@ class ImageWrapper(Wrapper):
         self.timeout = 1/self.get_fps()
         self.t_prev = time.time()
 
-    def read(self):
+    def _read_frame(self):
         # NOTE: Sleep Directly for correct FPS 
         t_process = ( self.timeout - (time.time() - self.t_prev) )
         if t_process > 0:
@@ -138,7 +138,7 @@ class DirImageWrapper(ImageWrapper):
         # Log
         logging.info('Found {} images in {}'.format(len(self.img_paths), self.path))
 
-    def read(self):
+    def _read_frame(self):
 
         self.img_nums += 1
         if self.img_nums < self.get_fps():
@@ -185,7 +185,7 @@ class VideoWrapper(Wrapper):
         logging.debug('Reset Source')
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-    def read(self):
+    def _read_frame(self):
 
         # NOTE: Sleep Directly for correct FPS 
         t_process = ( self.timeout - (time.time() - self.t_prev) )
@@ -213,7 +213,7 @@ class VideoWrapper(Wrapper):
             raise RuntimeError('Can not get FPS value')
 
     def get_type(self):
-        return VIDEO
+        return VIDEO.__name__
 
     def get_delay_time(self):
         return self.frame_delay
@@ -262,7 +262,7 @@ class RtspWrapper(VideoWrapper):
         self.set_cap()
         time.sleep(1/30)
 
-    def read(self):
+    def _read_frame(self):
         status, frame = self.cap.read()
         
         if not status:
@@ -271,7 +271,7 @@ class RtspWrapper(VideoWrapper):
         return frame
 
     def get_type(self):
-        return RTSP
+        return RTSP.__name__
 
 class UsbCameraWrapper(VideoWrapper):
     
@@ -314,14 +314,14 @@ class UsbCameraWrapper(VideoWrapper):
             raise InvalidInput("Can not find the camera {}".format(self.path))
 
     def get_type(self):
-        return CAM
+        return CAM.__name__
 
     def reset_cap(self):
         self.set_cap(self.resolution, self.fps)
         logging.debug('Reset Camera')
         time.sleep(1/30)
 
-    def read(self):
+    def _read_frame(self):
         status, frame = self.cap.read()
         
         if not status:
