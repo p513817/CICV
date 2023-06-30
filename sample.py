@@ -2,6 +2,16 @@ import sys, os, cv2, time
 import argparse
 import cicv
 
+class FPS_HELPER():
+    def __init__(self) -> None:
+        self.prev_time = time.time()
+        self.cur_fps = 0
+
+    def get_fps(self) -> int:
+        self.cur_fps = 1//(time.time() - self.prev_time)
+        self.prev_time = time.time()
+        return self.cur_fps
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', default='ivit', help="The cv window name.")
@@ -24,7 +34,7 @@ def main(args:argparse.Namespace):
     # Set Variable
     stop_stream = False
     stop_keys = [ ord('q'), ord('Q'), 27 ]
-    cur_fps, t_fps = 0, time.time()
+    fps_helper = FPS_HELPER()
 
     while(not stop_stream):
 
@@ -32,13 +42,9 @@ def main(args:argparse.Namespace):
         frame = src.read()
 
         # Draw FPS and Display 
-        cicv.put_highlighted_text(frame=frame, message=f'FPS:{cur_fps}')
+        cicv.put_highlighted_text(frame=frame, message=f'FPS:{fps_helper.get_fps()}')
         cv2.imshow('CICV Sample', frame)
         stop_stream = (cv2.waitKey(1) in stop_keys)
-
-        # Update FPS
-        cur_fps = 1//(time.time()-t_fps)
-        t_fps = time.time()
 
     # Release Source Object
     src.release()
