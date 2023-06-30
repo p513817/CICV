@@ -25,29 +25,21 @@ def get_args():
 
 def main(args:argparse.Namespace):
 
-    # Initialize CICV Source Object
-    src = cicv.Source(
+    src = cicv.Source(      # initialize CICV source object
         input = args.input,
         resolution = args.resolution,
         fps = args.fps )
     
-    # Set Variable
-    stop_stream = False
-    stop_keys = [ ord('q'), ord('Q'), 27 ]
-    fps_helper = FPS_HELPER()
+    stop_keys = [ ord('q'), ord('Q'), 27 ]      # define stop keyword
+    fpser = FPS_HELPER()       # help to calculate FPS
 
-    while(not stop_stream):
+    while(not cv2.waitKey(1) in stop_keys):
 
-        # Get frame
         frame = src.read()
-
-        # Draw FPS and Display 
-        cicv.put_highlighted_text(frame=frame, message=f'FPS:{fps_helper.get_fps()}')
+        cicv.draw_text(frame, f'FPS:{fpser.get_fps()}')
         cv2.imshow('CICV Sample', frame)
-        stop_stream = (cv2.waitKey(1) in stop_keys)
 
-    # Release Source Object
-    src.release()
+    src.release()   # release source object
 
 if __name__ == "__main__":
     main(get_args())
